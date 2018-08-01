@@ -1,0 +1,77 @@
+<template>
+    <view>
+
+<map id="map" longitude="{{realPosition.y}}" latitude="{{realPosition.x}}" scale="14" controls="{{controls}}"  markers="{{markers}}" polyline="{{polyline}}"  show-location style="width: 100%; height: 700px;"></map>
+
+
+<!-- <button bindtap='position'>得到当前位置</button> -->
+
+</view>
+
+</template>
+
+
+<script>
+    import wepy from 'wepy';
+    
+    import mapCarema from '../util/mapCarema'
+
+    export default class Map extends wepy.page {
+        data= {
+                realPosition:{
+
+                
+                x: 23.099994,
+                y: 113.324520
+                },
+                markers: [],
+            }
+        components = {
+            //为两个相同组件的不同实例分配不同的组件ID，从而避免数据同步变化的问题
+           // child: Child,
+            //anotherchild: Child
+        };
+
+        onLoad() {
+            let self = this
+            var t = Array();
+            
+            var data = mapCarema.mapCarema.data;
+            for (var i in data) {
+
+            var g = {}
+            g.latitude = data[i].latitude
+            g.longitude = data[i].longtitude
+            g.id = data[i].id
+            g.iconPath = "";
+            var callout = {
+                content: data[i].name,
+                
+            }
+            var label = {
+                content: data[i].name,
+                
+
+            }
+            g.callout = callout
+            
+            t.push(g)
+            
+            }
+            
+            self.markers = t
+            var _this = this
+                wx.getLocation({
+                success: function (res) {
+                    console.log(res)
+                    _this.setData({
+                    realPosition: {
+                        x: res.latitude,
+                        y: res.longitude
+                    }
+                    })
+                },
+                })
+        }
+    }
+</script>

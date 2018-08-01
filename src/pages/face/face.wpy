@@ -1,0 +1,181 @@
+<template>
+  
+      
+      <!-- 球员数据 -->
+      
+          <view class="player-info" >
+            <image  class='player-logo' src="{{tempFilePaths}}"></image>
+            <view class='player-name'>
+              <text @tap="uploadPhoto" >上传第一张图</text> 
+            </view>
+          </view>
+           <view class="player-info" >
+            <image  class='player-logo' src="{{secondFilePaths}}"></image>
+            <view class='player-name'>
+              <text @tap="uploadPhotoSecond" >上传第二张图</text> 
+            </view>
+          </view>
+      
+         <view class="base-info-title">
+            <button @tap="magic" >转换</button>
+         </view>
+        <view class="player-info" >
+            <image  class='player-logo' src="{{magicImage}}" @tap="preview"></image>
+            <view class='player-name'>
+              <text>转换结果 (点击图片查看大图)</text> 
+            </view>
+        </view>
+
+  
+</template>
+
+<script>
+import wepy from 'wepy';
+import { player_detail } from '../../utils/api';
+import { toFixed } from '../../utils/toFixed';
+import { upload } from '../../util/util';
+import { config, getServerUrl } from '../../util/config';
+
+export default class Play_detail extends wepy.page {
+  data = {
+    list: [],
+    magicImage: '',
+    photo1: '',
+    photo2: ''
+  };
+
+  methods = {
+    preview() {
+      wx.previewImage({
+        current: '', // 当前显示图片的http链接
+        urls: [this.magicImage] // 需要预览的图片http链接列表
+      });
+    },
+    magic() {
+      console.log(config);
+      var that = this;
+      wx.request({
+        url: getServerUrl() + '/magic', //仅为示例，并非真实的接口地址
+        method: 'POST',
+        data: 'one=' + this.data.photo1 + '&second=' + this.data.photo2,
+        header: {
+          'content-type': 'application/x-www-form-urlencoded' // 默认值
+        },
+        success: function(res) {
+          console.log(res);
+          if (res.statusCode == 200) {
+            wx.showModal({
+              title: '提示',
+              content: '成功',
+              showCancel: false
+            });
+            var quanUrl = getServerUrl() + res.data;
+            that.magicImage = quanUrl;
+            that.$apply();
+          } else {
+            wx.showModal({
+              title: '提示',
+              content: '失败',
+              showCancel: false
+            });
+          }
+          
+        },
+        fail: function(e) {
+          console.log(e);
+          wx.showModal({
+            title: '提示',
+            content: '失败',
+            showCancel: false
+          });
+        }
+      });
+    },
+    uploadPhoto() {
+      var that = this;
+      wx.chooseImage({
+        count: 1, // 默认9
+        sizeType: ['compressed'], // 可以指定是原图还是压缩图，默认二者都有
+        sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+        success: function(res) {
+          // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片
+          var tempFilePaths = res.tempFilePaths;
+          console.log(tempFilePaths);
+          that.setData({
+            tempFilePaths: res.tempFilePaths
+          });
+
+          upload(that, tempFilePaths, function(res) {
+            if (res.data) {
+              that.data.photo1 = res.data;
+            }
+          });
+        }
+      });
+    },
+    uploadPhotoSecond() {
+      var that = this;
+      wx.chooseImage({
+        count: 1, // 默认9
+        sizeType: ['compressed'], // 可以指定是原图还是压缩图，默认二者都有
+        sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+        success: function(res) {
+          // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片
+          var tempFilePaths = res.tempFilePaths;
+          console.log(tempFilePaths);
+          that.setData({
+            secondFilePaths: res.tempFilePaths
+          });
+
+          upload(that, tempFilePaths, function(res) {
+            if (res.data) {
+              console.log(res.data);
+              that.data.photo2 = res.data;
+              console.log(that.data);
+            }
+          });
+        }
+      });
+    }
+  };
+
+  computed = {
+    fgPCT() {
+      let fgPCT = toFixed(this.list.fgPCT);
+      return fgPCT;
+    },
+    threesPCT() {
+      let threesPCT = toFixed(this.list.threesPCT);
+      return threesPCT;
+    },
+    ftPCT() {
+      let ftPCT = toFixed(this.list.ftPCT);
+      return ftPCT;
+    }
+  };
+
+  async getPlayDetail(playerid) {
+    let that = this;
+    let params = {
+      playerid: playerid
+    };
+    const res = await player_detail(params);
+    // setData
+    that.list = res.data;
+    wx.setNavigationBarTitle({
+      title: res.data.cnname //球员姓名
+    });
+    that.$apply();
+  }
+
+  onLoad(e) {
+    //let playerid = e.id || '5292';
+    //this.getPlayDetail(playerid);
+    console.log(this.data);
+  }
+}
+</script>
+
+<style lang="less">
+@import './player_detail.less';
+</style>
